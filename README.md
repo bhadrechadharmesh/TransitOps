@@ -63,7 +63,7 @@
 1. Clone the repo
 
 ```bash
-git clone <repo-url> transitops
+git clone https://github.com/bhadrechadharmesh/TransitOps.git
 cd transitops
 ```
 
