@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("Fleet Manager") // Fleet Manager, Driver, Safety Officer, Financial Analyst
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Vehicle {
+  id             String   @id @default(cuid())
+  regNumber      String   @unique
+  model          String
+  type           String   @default("Truck") // Truck, Van, Bus, Pickup, Tanker
+  maxCapacity    Float    @default(1000)
+  odometer       Float    @default(0)
+  acquisitionCost Float   @default(0)
+  status         String   @default("Available") // Available, On Trip, In Shop, Retired
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  trips          Trip[]
+  maintenance    Maintenance[]
+  fuelLogs       FuelLog[]
+  expenses       Expense[]
+
+  @@index([status])
+}
+
+model Driver {
+  id             String   @id @default(cuid())
+  name           String
+  licenseNumber  String   @unique
+  licenseCategory String  @default("B")
+  licenseExpiry  DateTime
+  contact        String
+  safetyScore    Float    @default(100)
+  status         String   @default("Available") // Available, On Trip, Off Duty, Suspended
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  trips          Trip[]
+
+  @@index([status])
+}
+
+model Trip {
+  id             String   @id @default(cuid())
+  source         String
+  destination    String
+  vehicleId      String
+  driverId       String
+  cargoWeight    Float    @default(0)
+  plannedDistance Float   @default(0)
+  actualDistance  Float?   
+  fuelConsumed   Float?   
+  finalOdometer  Float?   
+  status         String   @default("Draft") // Draft, Dispatched, Completed, Cancelled
+  dispatchedAt   DateTime?
+  completedAt    DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  vehicle        Vehicle  @relation(fields: [vehicleId], references: [id])
+  driver         Driver   @relation(fields: [driverId], references: [id])
+
+  @@index([status])
+  @@index([vehicleId])
+  @@index([driverId])
+}
+
+model Maintenance {
+  id          String   @id @default(cuid())
+  vehicleId   String
+  description String
+  cost        Float    @default(0)
+  status      String   @default("Active") // Active, Closed
+  closedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
+
+  @@index([status])
+  @@index([vehicleId])
+}
+
+model FuelLog {
+  id        String   @id @default(cuid())
+  vehicleId String
+  liters    Float
+  cost      Float
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+
+  @@index([vehicleId])
+}
+
+model Expense {
+  id        String   @id @default(cuid())
+  vehicleId String
+  type      String   // Toll, Maintenance, Insurance, Fine, Other
+  amount    Float
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
+
+  @@index([vehicleId])
+}
